@@ -2,25 +2,6 @@ import logging
 import terminaltables
 
 
-def get_stream_logger(name, write_type, rec_format):
-    """Get stream logger :).
-
-    :param name: str, name of logger
-    :param write_type: int, type of write from logging (for example logging.DEBUG)
-    :param rec_format: str, type of record with some rules by logging
-    :return: logger object
-    """
-
-    logger = logging.getLogger(name)
-    logger.setLevel(write_type)
-    sh = logging.StreamHandler()
-    formatter = logging.Formatter(rec_format)
-    sh.setFormatter(formatter)
-    logger.addHandler(sh)
-
-    return logger
-
-
 def calc_salary(s_from, s_to):
     """Calc salary.
     First modify salary to get 'from', 'to'
@@ -45,47 +26,79 @@ def calc_salary(s_from, s_to):
     return None
 
 
-def get_pretty_table_from_dict(header, dictionary, title, keys_rules):
+def get_pretty_table_from_dict(header, dictionary, title, keys_rules, table_type='AsciiTable'):
     """Function convert dictionary to pretty table.
 
     :param header: list, headers of table, must be bigger by one then keys_rules
     :param dictionary: dict, dictionary in next format:
+
+    # key_i - some key of dictionary, cause dictionaries have no order
+    # Cell[i,j] - Cell of result table with i raw and j column. i and j starts from 1
     {
-        key1: {
-            subkey1: value1_1,
-            subkey2: value1_2,
-            subkey3: value1_3,
+        Cell[1,1]: {
+            keys_rules[0]: Cell[1,2],
+            keys_rules[1]: Cell[1,3],
             ...
         },
-        key2: {
-            subkey1: value2_1,
-            subkey2: value2_2,
-            subkey3: value2_3,
+        Cell[2,1]: {
+            keys_rules[0]: Cell[2,2],
+            keys_rules[1]: Cell[2,3],
             ...
         },
         ...
     }
-    subkeys must be equal in every item of dict
+    In this way dictionary has string keys and dict as values.
+    Every value must have similar keys which must be written in keys rules which set order of table columns
+
     :param title: title of table
     :param keys_rules: list, list of subkeys, set order of cols in tables
-    :return: str, pretty table for print
+    :param table_type: type of table from terminaltables
+    in terminaltables==3.1.0 have 3 variants with title:
+    AsciiTable, DoubleTable, SingleTable
+    For the more information please read terminaltables documentation
+    :return: str, pretty table for print, for example is:
+
+    # j - some index of list
+    # table_type == 'AsciiTable'
+    # -1 - last index
+
+    +title------------------+--------------------+---------------------+
+    | header[0]             | header[j-1]        | header[-1]          |
+    +-----------------------+--------------------+---------------------+
+    | Cell[1,1]             | Cell[1,j]          | Cell[1,-1]          |
+    | Cell[2,1]             | Cell[2,j]          | Cell[2,-1]          |
+    | ...                   | ...                | ...                 |
+    +-----------------------+--------------------+---------------------+
     """
 
     if not (len(header) - len(keys_rules) == 1):
         raise AttributeError('lenght of header must be bigger for one then len keys_rules')
 
-    for k in dictionary:
-        subdict_keys = set(dictionary[k].keys())
+    for key, value in dictionary.items():
+        subdict_keys = set(value.keys())
 
         if subdict_keys.difference(set(keys_rules)):
             raise AttributeError('keys_rules must be equal subdicts in dictionary')
+
+    valid_table_names = ['AsciiTable', 'DoubleTable', 'SingleTable']
+    if table_type not in valid_table_names:
+        raise AttributeError('unknown table type, set one of: {}'.format(', '.join(valid_table_names)))
 
     table = [header]
     for d_key, d_value in dictionary.items():
         raw = [d_key]
         for key in keys_rules:
-            raw.append(d_value[key])
+            # user can use list or other structures
+            raw.append(str(d_value[key]))
         table.append(raw)
-    table_instance = terminaltables.AsciiTable(table, title)
+
+    if table_type == 'AsciiTable':
+        table_instance = terminaltables.AsciiTable(table, title)
+
+    if table_type == 'DoubleTable':
+        table_instance = terminaltables.DoubleTable(table, title)
+
+    if table_type == 'SingleTable':
+        table_instance = terminaltables.SingleTable(table, title)
 
     return table_instance.table

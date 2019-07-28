@@ -5,9 +5,21 @@ import os
 import requests
 import dotenv
 
-from common_functions import get_stream_logger
 from common_functions import calc_salary
 from common_functions import get_pretty_table_from_dict
+
+# SuperJob API filters
+SJ_PROGRAMMING_AND_DEVELOPING = 48
+SJ_MOSCOW = 4
+SJ_MIN_COUNT_VACANCIES_FOR_ADD_IN_RATING = 5
+# HeadHunter API filters
+HH_MOSCOW = 1
+HH_MAX_AGE_OF_VACANCY_IN_DAYS = 30
+HH_PROGRAMMING_AND_DEVELOPING = '1.221'
+HH_MIN_COUNT_VACANCIES_FOR_ADD_IN_RATING = 100
+
+
+logging.basicConfig(format='%(asctime)s  %(name)s  %(levelname)s  %(message)s', level=logging.INFO)
 
 
 def predict_rub_salary_sj(vacancy):
@@ -89,7 +101,7 @@ def calc_salary_by_lang(list_of_salaries):
     return salary_by_lang
 
 
-def get_lang_salaries_rating(api_url, api_params, api_headers, spec_params, site_name, logger, languages):
+def get_lang_salaries_rating(api_url, api_params, api_headers, spec_params, site_name, languages):
     """Calc rating of salary for API some site.
 
     :param api_url: str, url of api
@@ -105,7 +117,8 @@ def get_lang_salaries_rating(api_url, api_params, api_headers, spec_params, site
     average_salary - average salary for vacancies with salary
     """
 
-    logger.info(f'Starts calc rating')
+    logger = logging.getLogger(site_name)
+    logger.info(f'Start calc rating')
     logger.debug(f'Languages list have lenght={len(languages)}')
     logger.debug(f'API url = {api_url}')
 
@@ -150,6 +163,7 @@ def get_lang_salaries_rating(api_url, api_params, api_headers, spec_params, site
         if len(list_of_salaries) > spec_params['min_count_vacancies']:
             salaries_rating[lang] = calc_salary_by_lang(list_of_salaries)
             logger.info(f'lang {lang}, add lang in rating')
+    logger.info(f'End calc rating')
 
     return salaries_rating
 
@@ -161,8 +175,8 @@ def get_sj_params():
     """
     sj_api_url = 'https://api.superjob.ru/2.0/vacancies/'
     sj_api_params = {
-        'catalogues': 48,
-        'town': 4,
+        'catalogues': SJ_PROGRAMMING_AND_DEVELOPING,
+        'town': SJ_MOSCOW,
     }
     sj_api_headers = {
         'X-Api-App-Id': os.getenv('SJ_SECRET_KEY')
@@ -173,12 +187,11 @@ def get_sj_params():
         'name_of_items_key': 'objects',
         'page_vacancies_count': 20,
         'limit_vacancies': 500,
-        'min_count_vacancies': 5
+        'min_count_vacancies': SJ_MIN_COUNT_VACANCIES_FOR_ADD_IN_RATING
     }
     sj_site_name = 'SuperJob'
-    sj_logger = get_stream_logger(sj_site_name, logging.INFO, '%(asctime)s  %(name)s  %(levelname)s  %(message)s')
 
-    return [sj_api_url, sj_api_params, sj_api_headers, sj_spec_params, sj_site_name, sj_logger]
+    return [sj_api_url, sj_api_params, sj_api_headers, sj_spec_params, sj_site_name]
 
 
 def get_hh_params():
@@ -188,9 +201,9 @@ def get_hh_params():
         """
     hh_api_url = 'https://api.hh.ru/vacancies'
     hh_api_params = {
-        'area': 1,
-        'period': 30,
-        'specialization': '1.221'
+        'area': HH_MOSCOW,
+        'period': HH_MAX_AGE_OF_VACANCY_IN_DAYS,
+        'specialization': HH_PROGRAMMING_AND_DEVELOPING
     }
     hh_api_headers = None
     hh_spec_params = {
@@ -199,22 +212,23 @@ def get_hh_params():
         'name_of_items_key': 'items',
         'page_vacancies_count': 20,
         'limit_vacancies': 2000,
-        'min_count_vacancies': 100
+        'min_count_vacancies': HH_MIN_COUNT_VACANCIES_FOR_ADD_IN_RATING
     }
     hh_site_name = 'HeadHunter'
-    hh_logger = get_stream_logger(hh_site_name, logging.INFO, '%(asctime)s  %(name)s  %(levelname)s  %(message)s')
 
-    return [hh_api_url, hh_api_params, hh_api_headers, hh_spec_params, hh_site_name, hh_logger]
+    return [hh_api_url, hh_api_params, hh_api_headers, hh_spec_params, hh_site_name]
 
 
 if __name__ == '__main__':
+    logger = logging.getLogger(__name__)
+    logging.info('Start script')
     dotenv.load_dotenv()
     languages = ['1C', 'Assembler', 'C', 'C#', 'C++', 'Clojure', 'CoffeeScript', 'Cuda', 'Delphi', 'Erlang', 'Fortran',
                  'Groovy', 'Haskell', 'Java', 'JavaScript', 'Kotlin', 'Lisp', 'Lua', 'Matlab ', 'Objective-C',
                  'OpenGL', 'Pascal', 'Perl', 'PHP', 'PL/SQL', 'Python', 'R', 'Ruby', 'Rust', 'Scala', 'Solidity',
                  'Swift', 'Visual Basic', 'Visual Basic.NET', 'Bash', 'ECMAScript', 'F#', 'Octave', 'Go', 'Julia',
                  'Maple', 'Mathematica', 'PowerShell', 'Shell', 'Tcl', 'TypeScript']
-    header = ['Язык программирования', 'Вакансий найдено', 'Вакансий обработано', 'Средняя зарплата']
+    header = ['Language of programming', 'Vacancies found', 'Vacancies processed', 'Average salary']
     keys_rules = ['vacancies_found', 'vacancies_processed', 'average_salary']
 
     ###################SuperJob################################
@@ -238,3 +252,4 @@ if __name__ == '__main__':
     print(sj_table)
     print()
     print(hh_table)
+    logging.info('End script')
