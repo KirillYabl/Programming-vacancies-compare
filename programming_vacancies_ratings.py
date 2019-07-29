@@ -229,7 +229,7 @@ if __name__ == '__main__':
                  'Swift', 'Visual Basic', 'Visual Basic.NET', 'Bash', 'ECMAScript', 'F#', 'Octave', 'Go', 'Julia',
                  'Maple', 'Mathematica', 'PowerShell', 'Shell', 'Tcl', 'TypeScript']
     header = ['Language of programming', 'Vacancies found', 'Vacancies processed', 'Average salary']
-    keys_rules = ['vacancies_found', 'vacancies_processed', 'average_salary']
+    keys_order = ['vacancies_found', 'vacancies_processed', 'average_salary']
 
     ###################SuperJob################################
 
@@ -237,7 +237,7 @@ if __name__ == '__main__':
     sj_salaries_rating = get_lang_salaries_rating(*sj_in_params)
 
     sj_title = 'SuperJob Moscow'
-    sj_table = get_pretty_table_from_dict(header, sj_salaries_rating, sj_title, keys_rules)
+    sj_table = get_pretty_table_from_dict(header, sj_salaries_rating, sj_title, keys_order)
 
     ###################HeadHunter################################
 
@@ -245,7 +245,7 @@ if __name__ == '__main__':
     hh_salaries_rating = get_lang_salaries_rating(*hh_in_params)
 
     hh_title = 'HeadHunter Moscow'
-    hh_table = get_pretty_table_from_dict(header, hh_salaries_rating, hh_title, keys_rules)
+    hh_table = get_pretty_table_from_dict(header, hh_salaries_rating, hh_title, keys_order)
 
     ###################Print Tables################################
 
